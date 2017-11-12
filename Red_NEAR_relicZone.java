@@ -37,9 +37,11 @@ import android.view.View;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.robotcontroller.external.samples.ConceptVuforiaNavigation;
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
@@ -81,6 +83,12 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
 //@Disabled
 public class Red_NEAR_relicZone extends LinearOpMode {
 
+    //DcMotor makes it drive forward or backward
+    private DcMotor leftMotor;
+    private DcMotor rightMotor;
+
+    private static int TICK2INCHES = 120;
+
     // declare for Servo installed in the right
     static final double INCREMENT   = 0.01;     // amount to slew servo each CYCLE_MS cycle
     static final int    CYCLE_MS    =   50;     // period of each cycle
@@ -115,15 +123,19 @@ public class Red_NEAR_relicZone extends LinearOpMode {
     VuforiaLocalizer vuforia;
 
     @Override public void runOpMode() {
+
+        leftMotor = hardwareMap.get(DcMotor.class, "leftMotor");
+        rightMotor = hardwareMap.get(DcMotor.class, "rightMotor");
+
         // before waiting for init, check the hardware information - Servo0*/
         servo = hardwareMap.get(Servo.class, "ServoRight");
 
      /* before waiting for init, check the hardware information - Sensor2*/
         // get a reference to the color sensor.
-        jewelSensorColor = hardwareMap.get(ColorSensor.class, "JewelColorRight");
+        jewelSensorColor = hardwareMap.get(ColorSensor.class, "rightColorSensor");
 
         // get a reference to the distance sensor that shares the same name.
-        jewelSensorDistance = hardwareMap.get(DistanceSensor.class, "JewelColorRight");
+        jewelSensorDistance = hardwareMap.get(DistanceSensor.class, "rightColorSensor");
 
         // get a reference to the color sensor to read the stone color
         ReadBalanceStoneColorSensor = hardwareMap.get(ColorSensor.class, "stoneColor");
@@ -206,6 +218,13 @@ public class Red_NEAR_relicZone extends LinearOpMode {
         VuforiaTrackable relicTemplate = relicTrackables.get(0);
         relicTemplate.setName("relicVuMarkTemplate"); // can help in debugging; otherwise not necessary
 
+        //Set motorMode
+      //  leftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+      //  leftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+     //   rightMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+     //   rightMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        leftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        rightMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         telemetry.addData(">", "Press Play to start");
         telemetry.update();
         waitForStart();
@@ -290,11 +309,23 @@ public class Red_NEAR_relicZone extends LinearOpMode {
                     hsvValues);
             telemetry.addData("Hue", hsvValues[0]);
           //  telemetry.addData("Alpha", jewelSensorColor.alpha()); telemetry.addData("Red  ", jewelSensorColor.red()); telemetry.addData("Green", jewelSensorColor.green());telemetry.addData("Blue ", jewelSensorColor.blue());
+         //talk to the motor to get position
+            int positionleft = leftMotor.getCurrentPosition();
+            int positionright = rightMotor.getCurrentPosition();
+            int kickJewelLength = 10;
+
+
          if (hsvValues[0]>180 && hsvValues[0]<250 ) // this is the case for the jewel is blue color, then robot move forward.
          {
              // talk to DC motor to move forward.
              // add DC motor here.
-            foward = true;
+             rightMotor.setDirection(DcMotor.Direction.FORWARD);
+             leftMotor.setDirection(DcMotor.Direction.REVERSE);
+             rightMotor.setTargetPosition((int)(positionleft + kickJewelLength ));
+             leftMotor.setTargetPosition(positionright - kickJewelLength);
+             rightMotor.setPower(0.5);
+             rightMotor.setPower(0.5);
+                     foward = true;
          }
          else  // this is the case for the jewel is read color, then robot moves backward
              {
